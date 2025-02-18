@@ -63,33 +63,82 @@ class menuScene extends Phaser.Scene{
 class gameScene extends Phaser.Scene {
   constructor() {
     super({ key: 'gameScene' });
-    this.countdownTime = 10;
-    this.currentHour = 12;
+    this.countdownTime = 5;
+    this.currentHour = 0;
+    this.cameraModeActive = false;
+    this.canToggleCamera = true;
   }
 
   preload() {
     this.load.image('0-FLIP', 'assets/0-FLIP.png');
+    this.load.image('cameraOverlay', 'assets/1-STAGE.png');
   }
 
   create() {
     this.UI();
+    this.createCameraMode();
     this.startNight();
   }
 
   UI() {
-    this.add.text(100,100, 'office mode', { 
+    this.add.text(100, 50, 'office mode', { 
       fontSize: '25px',
       fill: '#ffffff',
-      fontFamily: 'Sans-serif',
+      fontFamily: 'Sans-serif'
     }).setOrigin(0.5);
 
-    this.add.image(400, 550, '0-FLIP').setOrigin(0.5).setDisplaySize(400, 50).setInteractive()
+    this.flipButtonOffice = this.add.image(400, 550, '0-FLIP')
+      .setOrigin(0.5)
+      .setDisplaySize(400, 50)
+      .setInteractive()
       .on('pointerover', () => {
-        
+          this.handleFlipHover();
       });
 
     this.hourText = this.add.text(700, 50, this.formatHour(), { font: '25px Arial', fill: '#ffffff' }).setOrigin(0.5);
-    this.countdownText = this.add.text(400, 300, `Time: ${this.countdownTime}`, { font: '32px Sans-serif', fill: '#ffffff' }).setOrigin(0.5);
+    this.countdownText = this.add.text(400, 300, `Seconds: ${this.countdownTime}`, { font: '32px Sans-serif', fill: '#ffffff' }).setOrigin(0.5);
+  }
+
+  createCameraMode() {
+    this.cameraOverlay = this.add.container(0, 0).setVisible(false);
+
+    let overlay = this.add.image(400, 300, 'cameraOverlay')
+      .setDisplaySize(800, 600);
+
+    this.flipButtonCamera = this.add.image(400, 550, '0-FLIP')
+      .setOrigin(0.5)
+      .setDisplaySize(400, 50)
+      .setInteractive()
+      .on('pointerover', () => {
+          this.handleFlipHover();
+      });
+
+    this.cameraOverlay.add([overlay, this.flipButtonCamera]);
+  }
+
+  handleFlipHover() {
+    if (this.canToggleCamera) {
+      this.toggleCameraMode();
+      this.canToggleCamera = false;
+
+      this.flipButtonOffice.setVisible(false);
+      this.flipButtonCamera.setVisible(false);
+      this.flipButtonOffice.disableInteractive();
+      this.flipButtonCamera.disableInteractive();
+
+      this.time.delayedCall(700, () => {
+        this.flipButtonOffice.setVisible(true);
+        this.flipButtonCamera.setVisible(true);
+        this.flipButtonOffice.setInteractive();
+        this.flipButtonCamera.setInteractive();
+        this.canToggleCamera = true;
+      });
+    }
+  }
+
+  toggleCameraMode() {
+    this.cameraModeActive = !this.cameraModeActive;
+    this.cameraOverlay.setVisible(this.cameraModeActive);
   }
 
   startNight() {
@@ -105,22 +154,21 @@ class gameScene extends Phaser.Scene {
     if (this.countdownTime > 1) {
       this.countdownTime--;
     } else {
-      this.countdownTime = 10;
+      this.countdownTime = 5;
       this.currentHour++;
     }
 
-    this.countdownText.setText(`Time: ${this.countdownTime}`);
+    this.countdownText.setText(`Seconds: ${this.countdownTime}`);
     this.hourText.setText(this.formatHour());
 
-    if (this.currentHour === 18) {
+    if (this.currentHour === 6) {
       this.scene.pause();
     }
   }
 
   formatHour() {
-    let period = this.currentHour >= 12 ? "PM" : "AM";
-    let standardHour = this.currentHour > 12 ? this.currentHour - 12 : this.currentHour;
-    return `${standardHour} ${period}`;
+    let displayHour = this.currentHour === 0 ? 12 : this.currentHour;
+    return `${displayHour} AM`;
   }
 }
 
